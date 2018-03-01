@@ -1,0 +1,33 @@
+# Site settings
+title:          Rarchive
+description:    "This is Rinmu"
+baseurl:        ""
+url:            "https://cyseo.github.io"
+
+# Author
+author:
+  name:         Changyoun Seo
+  url:          http://rinmu.com
+  email:        block.rinmu@gmail.com
+
+# Build settings
+markdown:       kramdown
+
+kramdown:
+  input: GFM
+  
+# Assets
+sass:
+  sass_dir:     _sass
+  style:        compressed
+
+# Gems
+plugins:
+  - jekyll-paginate
+
+# Disqus
+disqus:         cyseo
+
+# Permalinks
+permalink:      /:year-:month-:day/:title
+paginate:       5

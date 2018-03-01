@@ -1,0 +1,18 @@
+@import url(//fonts.googleapis.com/earlyaccess/jejugothic.css);
+*{
+    font-family: 'Jeju Gothic';
+}
+
+.highlight pre code,
+.highlight pre code * {
+	font-family: 'Inconsolata', monospace;
+}
+
+.disqus_wrapper{
+	width: 100%;
+	padding-top: 80px;
+}
+
+.comments{
+	padding: 20px 0;
+}
