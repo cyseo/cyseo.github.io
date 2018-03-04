@@ -103,8 +103,8 @@ public class ServiceImpl implements Service{
 
 요약하면 `[4, 5, 6]` 위치에 두는 것이 좋다는 것이다.
 
-### 트랜잭션 사용 실수
-트랜잭션을 사용하는 이유는 모두 실행되거나, 모두 실행되지 않게 하기 위함이다. 실제 @Transactional이 동작하는 부분의 코드만 보면 다음과 같다.
+### @Transactional 원리
+실제 @Transactional이 트랜잭션 경계설정을 하는 부분의 코드만 보면 다음과 같다.
 
 모두 볼 필요는 없고, `[1, 2, 3]` 부분을 살펴보자.
 ```java
@@ -144,15 +144,17 @@ public Object invoke(final MethodInvocation invocation) throws Throwable {
     }
 }
 ```
-메서드 명인 invoke, [1]번 부분의 proceed()를 보면 어쩐지 익숙하다. 바로 토비의 스프링 6장에서 주구장창 나오는 프록시 패턴에 지속적으로 나오는 부분이기 때문이다.
+메서드 명인 `invoke`, [1]번 부분의 `proceed()`를 보면 어쩐지 익숙하다. 바로 토비의 스프링 6장에서 주구장창 나오는 프록시 패턴에 지속적으로 나오는 부분이기 때문이다.
 
-코드를 분석해보면, 
+코드를 보면, 
 - [1] : try 내에서 타깃의 메소드를 실행(`proceed()`) 하고 그 전후로 부가기능을 넣는다.
 - [2] : 그렇다면 이 catch가 잡힌다면 [3]의 `commitTransactionAfterReturning()`이 실행되지 않을 것을 알 수 있다.
 
 토비의 스프링 471p를 보면, `MethodInterceptor`을 implements 받아 구현한 `트랜잭션 어드바이스`에서 위와 비슷한 구조를 볼 수 있다.
 토비의 예제는 코드 분석이 조금 더 쉬운데, 똑같이 메소드를 실행(`proceed()`) 하고 정상이라면 바로 커밋, exception 발생 시 바로 롤백하는 간단한 구조를 볼 수 있다.
 
+
+### 트랜잭션 적용 실수
 이제 내가 프로젝트를 진행하면서 했던 실수를 살펴보자.
 ```java
 @Transactional
@@ -174,7 +176,7 @@ private boolean doSomething(Something something) {
 위 내용을 모두 보았다면 알겠지만 이 메서드의 @Transactional은 의미가 없다.
 왜냐하면 @Transactional의 실 동작부분에서 살펴봤듯 이 메서드에서 exception이 throws 되어 `[2]`번에 catch가 되야지만 우리가 기대했던 대로 트랜잭션이 적용될 것이기 때문이다!
 
-`boolean` 리턴보다는 좀더 java스럽게, 그리고 @Transactional도 깔끔히 동작하도록 수정한다면 다음과 같다.
+리턴 `boolean`보다는 자바스럽게 `exception`을 던지고, @Transactional도 깔끔히 동작하도록 수정한다면 다음과 같다.
 
 ```java
 @Transactional
