@@ -154,21 +154,23 @@ public Object invoke(final MethodInvocation invocation) throws Throwable {
 토비의 예제는 코드 분석이 조금 더 쉬운데, 똑같이 메소드를 실행(`proceed()`) 하고 정상이라면 바로 커밋, exception 발생 시 바로 롤백하는 간단한 구조를 볼 수 있다.
 
 
-### 트랜잭션 적용 실수
+## 트랜잭션 적용 실수
 이제 내가 프로젝트를 진행하면서 했던 실수를 살펴보자.
+
+### 1. exception
 ```java
 @Transactional
-private boolean doSomething(Something something) {
-    try {
-        somethingMapper.doSomething1(something);
-        somethingMapper.doSomething2(something);
-        somethingMapper.doSomething3(something);
-    }
-    catch (Exception e){
-        logger.error("error!!");
-        return false;
-    }
-    return true;
+public boolean doSomething(Something something) {
+  try {
+    somethingMapper.doSomething1(something);
+    somethingMapper.doSomething2(something);
+    somethingMapper.doSomething3(something);
+  }
+  catch (Exception e){
+    logger.error("error!!");
+    return false;
+  }
+  return true;
 }
 ```
 무엇이 문제일까?
@@ -180,16 +182,52 @@ private boolean doSomething(Something something) {
 
 ```java
 @Transactional
-private void doSomething(Something something) {
+public void doSomething(Something something) {
+  somethingMapper.doSomething1(something);
+  somethingMapper.doSomething2(something);
+  somethingMapper.doSomething3(something);
+}
+```
+
+### 2. Private
+```java
+// DoSomethingController.java
+public class DoSomethingController {
+
+  @Autowired
+  private DoSomethingService doSomethingService;
+
+  public void callService() {
+    doSomethingService.doSomething();
+  }
+}
+
+// DoSomethingService.java
+public class DoSomethingService {
+
+  public void doSomething() {
+    doPrivateSomething(new Something());
+  }
+
+  @Transactional
+  private void doPrivateSomething(Something something) {
     somethingMapper.doSomething1(something);
     somethingMapper.doSomething2(something);
     somethingMapper.doSomething3(something);
+  }
 }
 ```
-이제 우리가 의도한대로 동작할 것이다.
+이번에는 또 뭐가 문제일까.
+
+위 트랜잭션은 또 적용되지 않는다. 프록시 방식의 AOP는 같은 타깃 내에서 메소드를 호출할 때에는 적용되지 않기 때문이다. 클라이언트로부터 public 메소드가 호출되는 방식이라면 정상적으로 프록시를 타고 트랜잭션 경계설정이 일어나지만 내부에서 내부를 호출하는 경우 그 프록시 경로를 타지 않는다.
+
+따라서 위 경우에는 트랜잭션이 제대로 동작하도록 하려면 컨트롤러에서 직접 public으로 고친 `doPrivateSomething`을 호출해야 한다. 
+
+### 의문
+그런데 서비스 내에서 어떤 작업 후에 내부적으로 다른 private 메서드를 콜하고 그 메서드에 트랜잭션을 구현하는 경우라면 새로운 클래스를 만들어서 그 클래스의 메서드를 불러야 한다고 한다. 이 부분은 잘 모르겠다. 같은 일을 하는 클래스에서 오직 트랜잭션을 위해 클래스를 분리해야 하는 것인지.. 어쩌면 서비스에서 전처리 작업을 거치고 내부적인 메서드를 불러서 쓰는 설계 자체가 잘못된 것일지도 모르겠다. 이 부분은 좀더 경험이 필요하다.
 
 ## 마치며
-사실 센스 있는 사람이라면 @Transactional의 실제 구현 로직을 모르더라고 위와 같이 exception을 받아 처리될 것이라고 보통은 예측할텐데, 나는 그러지 못했다 ㅜㅜ.
+처음에는 1번 실수만을 발견했는데, 알고보니 2번 실수도 있었다. 그냥 오류덩어리였다.. 
 역시 토템 코딩이 아니라 확실히 아는 것이 중요하다는 것을 다시 한번 느끼게 되었다. 이번 코드리뷰에서 해당 오류를 찾아주신 책임님께 감사하고, 마침 AOP를 다룬 토비 책을 보며 알게된 내용들을 정리했다.
 
 ### 참고, 출처
