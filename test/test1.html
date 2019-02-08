@@ -4,28 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script type="text/javascript" src="https://rawgithub.com/hiddentao/google-tts/master/google-tts.min.js"></script>
-    <title>test1</title>
+    <script
+            src="https://code.jquery.com/jquery-1.12.4.min.js"
+            integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+            crossorigin="anonymous"></script>
+    <title>Word To File</title>
 </head>
 <body>
 <div>
     <h1>V2</h1>
-    <button id="testButton1">gg</button>
+    <button id="testButton1">VOICE1 PLAY</button>
+    <button id="testButton2">VOICE2 PLAY</button>
     <p id="urlHere" style="background-color: #dddddd"></p>
 </div>
 
 <script>
-    var tts = new GoogleTTS('ko-KR');
     var testButton1 = document.getElementById('testButton1');
+    var testButton2 = document.getElementById('testButton2');
     var urlHere = document.getElementById('urlHere');
+    var voices;
 
-    var word = '가나다라 마바사아 자차카타 파하';
-    testButton1.onclick = function () {
-        urlHere.innerText = tts.urls(word);
-        tts.play('가나다라 마바사아 자차카타 파하', null, function () {
-            alert('complete');
-        });
+    window.speechSynthesis.onvoiceschanged = function () {
+        voices = window.speechSynthesis.getVoices();
+        voices = voices.filter(voice => voice.lang === 'ko-KR');
+        console.log('load!');
+        console.log(voices);
     };
+
+    testButton1.onclick = function () {
+        play(0);
+    };
+
+    testButton2.onclick = function () {
+        play(1);
+    };
+
+    function play(index) {
+        var msg = new SpeechSynthesisUtterance();
+        msg.voice = voices[index]; // Note: some voices don't support altering params
+        msg.voiceURI = 'native';
+        msg.volume = 1; // 0 to 1
+        msg.rate = 1; // 0.1 to 10
+        msg.pitch = 1; //0 to 2
+        msg.text = '지금부터 화면에 나오는 그림을 잘 보고 엑스자가 아닌 그림이 나올 때마다 화면 하단의 터치 영역을 누르세요.';
+        msg.lang = 'ko-KR';
+
+        msg.onend = function (event) {
+            console.log('Finished in ' + event.elapsedTime + ' seconds.');
+        };
+
+        window.speechSynthesis.speak(msg);
+    }
 </script>
 </body>
 </html>
