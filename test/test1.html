@@ -9,7 +9,7 @@
 </head>
 <body>
 <div>
-    <h1>V1</h1>
+    <h1>V2</h1>
     <button id="testButton1">gg</button>
     <p id="urlHere" style="background-color: #dddddd"></p>
 </div>
@@ -21,7 +21,7 @@
 
     var word = '가나다라 마바사아 자차카타 파하';
     testButton1.onclick = function () {
-        urlHere.innerText(tts.urls(word));
+        urlHere.innerText = tts.urls(word);
         tts.play('가나다라 마바사아 자차카타 파하', null, function () {
             alert('complete');
         });
